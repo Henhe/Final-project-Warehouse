@@ -18,8 +18,12 @@ https://docs.mongodb.com/manual/tutorial/install-mongodb-on-os-x/
 *   sys
 *   configparser
 # **Stucture of configDB.ini**
-*   connection
+*   connection_server
+host, port for create server's socket 
+*   connection_client
+host, port for create client connection to server 
 *   mongo
+host, port, database's name for create connection to MongoDB
 # **Start**
 run server:
 ```
