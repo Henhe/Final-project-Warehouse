@@ -1,4 +1,5 @@
 import datetime
+import os
 
 class Logs:
 
@@ -15,7 +16,11 @@ class Logs:
     :param nameFile: str file's name
     '''
 
-    self.nameFile = nameFile + '.log'
+    if not os.path.exists('LOGS'):
+      os.mkdir('LOGS', mode=0o777, dir_fd=None)
+
+    # os.chdir('LOGS')
+    self.nameFile = 'LOGS\\' + nameFile + '.log'
 
   def trace(self, message, prioritet = 0):
 

@@ -295,13 +295,16 @@ def get_Items_Name():
         list.append([i.title])
     return list
 
-def connect():
+def connect(db_name = 'mongoengine_warehouse', host_ = 'localhost', port_ = 27017):
 
     '''
     connect to MongoDB
+    :param db_name: database's name
+    :param host_: database's host
+    :param port_: database's port
     '''
 
-    me.connect('mongoengine_warehouse', host='localhost', port=27017)
+    me.connect(db_name, host=host_, port=port_)
 
 def disconnect():
 

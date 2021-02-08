@@ -16,6 +16,10 @@ https://docs.mongodb.com/manual/tutorial/install-mongodb-on-os-x/
 *   datetime
 *   argparse
 *   sys
+*   configparser
+# **Stucture of configDB.ini**
+*   connection
+*   mongo
 # **Start**
 run server:
 ```

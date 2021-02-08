@@ -2,6 +2,7 @@ import socket
 import json
 import Data_Access_MongoDB as daMDB
 import Log
+import dbconfig
 
 class ServerSocket:
 
@@ -24,8 +25,20 @@ class ServerSocket:
         self.log.rewriteFile()
         self.log.trace(f'Build server ', 0)
 
-        self.host = HOST
-        self.port = PORT
+        settings = dbconfig.read_db_config('configDB.ini', 'connect_server')
+        if settings:
+            self.host = settings['host']
+            self.port = int(settings['port'])
+
+        else:
+            self.log.trace(f"Can't find options to create socket", 0)
+            quit()
+            # self.host = HOST
+            # self.port = PORT
+
+        self.parametres_Db_Connection = {}
+        self.parametres_Db_Connection = dbconfig.read_db_config('configDB.ini', 'mongo')
+
         self.connectionMDB = None
 
     def create(self):
@@ -44,7 +57,14 @@ class ServerSocket:
         '''
 
         self.log.trace(f'Try connect to MongoDB server ', 0)
-        self.connectionMDB = daMDB.connect()
+        if self.parametres_Db_Connection:
+            self.connectionMDB = daMDB.connect(self.parametres_Db_Connection['database'],
+                                               self.parametres_Db_Connection['host'],
+                                               int(self.parametres_Db_Connection['port']))
+        else:
+            self.log.trace(f"Can't find options to connect to MongoDB", 0)
+            quit()
+
         self.log.trace(f'Result {self.connectionMDB} ', 0)
 
     def fill_test_data(self):

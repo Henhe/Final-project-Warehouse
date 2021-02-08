@@ -3,6 +3,7 @@ import Data_Access_MongoDB as daMDB
 import Client
 import Log
 from datetime import datetime as dt
+import dbconfig
 
 class ClientGUI:
 
@@ -43,10 +44,20 @@ class ClientGUI:
         self.headings = None
 
         self.log.trace(f'Make client part', 0)
-        self.client = Client.ClientSocket()
+
+        settings = dbconfig.read_db_config('configDB.ini', 'connect_client')
+        if settings:
+            self.host = settings['host']
+            self.port = int(settings['port'])
+        else:
+            self.log.trace(f"Can't find options to create socket", 0)
+            quit()
+
+        self.client = Client.ClientSocket(settings['host'], int(settings['port']))
         self.log.trace(f'Initialising socket', 0)
         self.client.init_socket()
         self.log.trace(f'Try connect to server', 0)
+
         self.client.connect()
 
         self.log.trace(f'Fill test base', 0)
