@@ -29,10 +29,25 @@ class ClientGUI:
         first connection run filling base by test datd if base is empty
         '''
 
-        Log.PRIORITET = 0
-        self.log = Log.Logs('client')
-        self.log.rewriteFile()
-        self.log.trace(f'Begin work client', 0)
+        self.keeplog = True
+        self.minlevellog = 10
+
+        settings = dbconfig.read_db_config('configDB.ini', 'connect_client')
+        if settings:
+            self.host = settings['host']
+            self.port = int(settings['port'])
+            if str(settings['keeplog']).lower() == 'false':
+                self.keeplog = False
+            self.minloglevel = int(settings['minloglevel'])
+        else:
+            # self.log.trace(f"Can't find options to create socket", 0)
+            quit()
+
+        if self.keeplog:
+            self.log = Log.Logs('client')
+            self.log.rewriteFile()
+
+        self.trace(f'Begin work client', 0)
 
         self.dataItem = None
         self.dataUser = None
@@ -43,28 +58,25 @@ class ClientGUI:
         self.isWorker = False
         self.headings = None
 
-        self.log.trace(f'Make client part', 0)
-
-        settings = dbconfig.read_db_config('configDB.ini', 'connect_client')
-        if settings:
-            self.host = settings['host']
-            self.port = int(settings['port'])
-        else:
-            self.log.trace(f"Can't find options to create socket", 0)
-            quit()
+        self.trace(f'Make client part', 0)
 
         self.client = Client.ClientSocket(settings['host'], int(settings['port']))
-        self.log.trace(f'Initialising socket', 0)
+        self.trace(f'Initialising socket', 0)
         self.client.init_socket()
-        self.log.trace(f'Try connect to server', 0)
+        self.trace(f'Try connect to server', 0)
 
         self.client.connect()
 
-        self.log.trace(f'Fill test base', 0)
+        self.trace(f'Fill test base', 0)
         command = self.make_command('Fill test data')
-        self.log.trace(f'Send {command} type: {type(command)}', 0)
+        self.trace(f'Send {command} type: {type(command)}', 5)
         res = self.client.send(command)
-        self.log.trace(f'Result {res}', 0)
+        self.trace(f'Result {res}', 10)
+
+    def trace(self, message, levellog):
+        if self.keeplog:
+            if levellog <= self.minloglevel:
+                self.log.trace(message, levellog)
 
     def make_command(self, command, param = {}):
 
@@ -94,16 +106,16 @@ class ClientGUI:
             param['login'] = login
             param['password'] = password
             command = self.make_command('CheckLogin', param)
-            self.log.trace(f'Send {command} type: {type(command)}', 0)
+            self.trace(f'Send {command} type: {type(command)}', 5)
             res = self.client.send(command)
-            self.log.trace(f'Result {res}', 0)
+            self.trace(f'Result {res}', 10)
 
             self.user, self.isAdmin, self.isWorker = res
 
             if self.user == None:
                 quit()
         except Exception as e:
-            self.log.trace(f"Input client exception check login {e} ", 0)
+            self.trace(f"Input client exception check login {e} ", 1)
             quit()
 
     def Login(self):
@@ -126,7 +138,7 @@ class ClientGUI:
             return event, values
 
         except Exception as e:
-            self.log.trace(f"Erroe login window {e} ", 0)
+            self.trace(f"Erroe login window {e} ", 1)
             quit()
 
     def make_item_table(self, num_cols):
@@ -135,12 +147,12 @@ class ClientGUI:
         :param num_cols: int quantity columns
         '''
         try:
-            self.log.trace(f'make_item_table', 0)
+            self.trace(f'make_item_table', 5)
             command = self.make_command('make_item_table')
 
-            self.log.trace(f'Send {command} type: {type(command)}', 0)
+            self.trace(f'Send {command} type: {type(command)}', 5)
             res = self.client.send(command)
-            self.log.trace(f'Result {res}', 0)
+            self.trace(f'Result {res}', 10)
 
             num = 0;
             self.dataItem = [[j for j in range(num_cols)] for i in range(len(res))]
@@ -149,7 +161,7 @@ class ClientGUI:
                 num += 1
 
         except Exception as e:
-            self.log.trace(f"Eroor fill table items {e} ", 0)
+            self.trace(f"Eroor fill table items {e} ", 1)
             quit()
 
     def update_item_table(self):
@@ -157,7 +169,7 @@ class ClientGUI:
         update items table
         '''
         try:
-            self.log.trace(f'update_item_table', 0)
+            self.trace(f'update_item_table', 5)
             self.make_item_table(num_cols=4)
             self.headings = ['Id', 'Name', 'Price', 'User']
             layout = [[sg.Table(values=self.dataItem[:][:], headings=self.headings,  # max_col_width=25,
@@ -175,7 +187,7 @@ class ClientGUI:
                       [sg.Button('Edit'), sg.Button('New'), sg.Button('Delete')]]
             return layout
         except Exception as e:
-            self.log.trace(f"Error update table items {e} ", 0)
+            self.trace(f"Error update table items {e} ", 1)
             quit()
 
     def Main_Window(self):
@@ -186,7 +198,7 @@ class ClientGUI:
         '''
 
         try:
-            self.log.trace(f'update_item_table', 0)
+            self.trace(f'update_item_table', 5)
             if self.isAdmin and self.isWorker:
                 layout = [[sg.Text('Work with', justification="center", size=(100, 1))],
                           [sg.Button('Items', size=(100, 1))],
@@ -219,7 +231,7 @@ class ClientGUI:
 
             window.close()
         except Exception as e:
-            self.log.trace(f"Error main window {e} ", 0)
+            self.trace(f"Error main window {e} ", 1)
             quit()
 
     def Main_Window_Item(self):
@@ -231,7 +243,7 @@ class ClientGUI:
         '''
 
         try:
-            self.log.trace(f'Main_Window_Item', 0)
+            self.trace(f'Main_Window_Item', 5)
             layout = None
             layout = self.update_item_table()
 
@@ -247,31 +259,31 @@ class ClientGUI:
                 if event == 'Edit':
                     if len(values['-TABLE-']) > 0:
                         self.Windows_Item(values['-TABLE-'][0], False)
-                        self.log.trace(f'Update Main_Window_Item', 0)
+                        self.trace(f'Update Main_Window_Item', 5)
                         window.Element('-TABLE-').Update(self.dataItem[:][:])
 
                 if event == 'New':
                     self.Windows_Item(None, True)
-                    self.log.trace(f'Update Main_Window_Item', 0)
+                    self.trace(f'Update Main_Window_Item', 5)
                     window.Element('-TABLE-').Update(self.dataItem[:][:])
 
                 if event == 'Delete':
                     param = {}
                     param['id'] = self.dataItem[values['-TABLE-'][0]][0]
                     command = self.make_command('delete_item', param)
-                    self.log.trace(f'Send {command} type: {type(command)}', 0)
+                    self.trace(f'Send {command} type: {type(command)}', 5)
                     res = self.client.send(command)
-                    self.log.trace(f'Result {res}', 0)
+                    self.trace(f'Result {res}', 10)
 
-                    self.log.trace(f"Delete from local data {self.dataItem[values['-TABLE-'][0]]}", 0)
+                    self.trace(f"Delete from local data {self.dataItem[values['-TABLE-'][0]]}", 3)
                     del self.dataItem[values['-TABLE-'][0]]
 
-                    self.log.trace(f'Update Main_Window_Item', 0)
+                    self.trace(f'Update Main_Window_Item', 5)
                     window.Element('-TABLE-').Update(self.dataItem[:][:])
 
             window.close()
         except Exception as e:
-            self.log.trace(f"Error Main Window Item {e} ", 0)
+            self.trace(f"Error Main Window Item {e} ", 1)
             quit()
 
     def Windows_Item(self, Index, isNew):
@@ -282,7 +294,7 @@ class ClientGUI:
         :param isNew: bool is new object
         '''
         try:
-            self.log.trace(f'Main_Window_Item {Index} {isNew}', 0)
+            self.trace(f'Main_Window_Item {Index} {isNew}', 5)
             name_Window = 'New'
             id = ''
             title = ''
@@ -317,9 +329,9 @@ class ClientGUI:
                 param['id'] = id
                 param['new'] = new
                 command = self.make_command('save_item', param)
-                self.log.trace(f'Send {command} type: {type(command)}', 0)
+                self.trace(f'Send {command} type: {type(command)}', 5)
                 new_id = self.client.send(command)
-                self.log.trace(f'Result {new_id}', 0)
+                self.trace(f'Result {new_id}', 10)
 
                 # new_id = daMDB.save_Items(id, new)
 
@@ -327,15 +339,15 @@ class ClientGUI:
                     id = new_id
                 row =[id, values['-NAME-'], values['-PRICE-'], self.user]
                 if isNew:
-                    self.log.trace(f'append {row}', 0)
+                    self.trace(f'append {row}', 3)
                     self.dataItem.append(row)
                 else:
-                    self.log.trace(f'update {row}', 0)
+                    self.trace(f'update {row}', 3)
                     self.dataItem[Index] = row
 
             window.close()
         except Exception as e:
-            self.log.trace(f"Error Windows Item {e} ", 0)
+            self.trace(f"Error Windows Item {e} ", 1)
             quit()
 
     def make_user_table(self, num_cols):
@@ -346,12 +358,12 @@ class ClientGUI:
         '''
 
         try:
-            self.log.trace(f'make_user_table', 0)
+            self.trace(f'make_user_table', 5)
             command = self.make_command('make_user_table')
 
-            self.log.trace(f'Send {command} type: {type(command)}', 0)
+            self.trace(f'Send {command} type: {type(command)}', 5)
             res = self.client.send(command)
-            self.log.trace(f'Result {res}', 0)
+            self.trace(f'Result {res}', 10)
 
             num = 0;
             self.dataUser = [[j for j in range(num_cols)] for i in range(len(res))]
@@ -359,7 +371,7 @@ class ClientGUI:
                 self.dataUser[num] = [i[0], i[1], i[2], i[3]]
                 num += 1
         except Exception as e:
-            self.log.trace(f"Error fill table users {e} ", 0)
+            self.trace(f"Error fill table users {e} ", 1)
             quit()
 
     def Main_Window_User(self):
@@ -372,7 +384,7 @@ class ClientGUI:
         '''
 
         try:
-            self.log.trace(f'Main_Window_User', 0)
+            self.trace(f'Main_Window_User', 5)
             self.make_user_table(num_cols=4)
             self.headings = ['Id', 'Name', 'isAdmin', 'isWorker']
             layout = [[sg.Table(values=self.dataUser[:][:], headings=self.headings,  # max_col_width=25,
@@ -398,31 +410,31 @@ class ClientGUI:
                 if event == 'Edit':
                     if len(values['-TABLE-']) > 0:
                         self.Windows_User(values['-TABLE-'][0], False)
-                        self.log.trace(f'Update Main_Window_User', 0)
+                        self.trace(f'Update Main_Window_User', 5)
                         window.Element('-TABLE-').Update(self.dataUser[:][:])
 
                 if event == 'New':
                     self.Windows_User(None, True)
-                    self.log.trace(f'Update Main_Window_User', 0)
+                    self.trace(f'Update Main_Window_User', 5)
                     window.Element('-TABLE-').Update(self.dataUser[:][:])
 
                 if event == 'Delete':
                     param = {}
                     param['id'] = self.dataUser[values['-TABLE-'][0]][0]
                     command = self.make_command('delete_user', param)
-                    self.log.trace(f'Send {command} type: {type(command)}', 0)
+                    self.trace(f'Send {command} type: {type(command)}', 5)
                     res = self.client.send(command)
-                    self.log.trace(f'Result {res}', 0)
+                    self.trace(f'Result {res}', 10)
 
-                    self.log.trace(f"Delete from local data {self.dataUser[values['-TABLE-'][0]]}", 0)
+                    self.trace(f"Delete from local data {self.dataUser[values['-TABLE-'][0]]}", 3)
                     del self.dataUser[values['-TABLE-'][0]]
 
-                    self.log.trace(f'Update Main_Window_User', 0)
+                    self.trace(f'Update Main_Window_User', 5)
                     window.Element('-TABLE-').Update(self.dataUser[:][:])
 
             window.close()
         except Exception as e:
-            self.log.trace(f"Error Main Window User {e} ", 0)
+            self.trace(f"Error Main Window User {e} ", 1)
             quit()
 
     def Windows_User(self, Index, isNew):
@@ -435,7 +447,7 @@ class ClientGUI:
         '''
 
         try:
-            self.log.trace(f'Main_Window_Item {Index} {isNew}', 0)
+            self.trace(f'Main_Window_Item {Index} {isNew}', 5)
             name_Window = 'New'
             id = ''
             name = ''
@@ -475,23 +487,23 @@ class ClientGUI:
                 param['id'] = id
                 param['new'] = new
                 command = self.make_command('save_user', param)
-                self.log.trace(f'Send {command} type: {type(command)}', 0)
+                self.trace(f'Send {command} type: {type(command)}', 5)
                 new_id = self.client.send(command)
-                self.log.trace(f'Result {new_id}', 0)
+                self.trace(f'Result {new_id}', 10)
 
                 if new_id != '':
                     id = new_id
                 row = [id, values['-NAME-'], values['-ISADMIN-'], values['-ISADMIN-'], values['-ISWORKER-']]
                 if isNew:
-                    self.log.trace(f'append {row}', 0)
+                    self.trace(f'append {row}', 3)
                     self.dataUser.append(row)
                 else:
-                    self.log.trace(f'update {row}', 0)
+                    self.trace(f'update {row}', 3)
                     self.dataUser[Index] = row
 
             window.close()
         except Exception as e:
-            self.log.trace(f"Error Windows User {e} ", 0)
+            self.trace(f"Error Windows User {e} ", 1)
             quit()
 
     def make_order_table(self, num_cols):
@@ -502,13 +514,13 @@ class ClientGUI:
         '''
 
         try:
-            self.log.trace(f'make_order_table', 0)
+            self.trace(f'make_order_table', 5)
 
             command = self.make_command('make_order_table')
 
-            self.log.trace(f'Send {command} type: {type(command)}', 0)
+            self.trace(f'Send {command} type: {type(command)}', 5)
             res = self.client.send(command)
-            self.log.trace(f'Result {res}', 0)
+            self.trace(f'Result {res}', 10)
 
             num = 0;
             self.dataOrder = [[j for j in range(num_cols)] for i in range(len(res))]
@@ -517,7 +529,7 @@ class ClientGUI:
                 num += 1
 
         except Exception as e:
-            self.log.trace(f"Error fill table order {e} ", 0)
+            self.trace(f"Error fill table order {e} ", 1)
             quit()
 
     def make_order_table_table(self, id, num_cols):
@@ -528,15 +540,15 @@ class ClientGUI:
         :param num_cols: int quantity columns
         '''
         try:
-            self.log.trace(f'make_order_table', 0)
+            self.trace(f'make_order_table', 5)
             num = 0;
             if id != '':
                 param = {}
                 param['id'] = id
                 command = self.make_command('make_order_table_table', param)
-                self.log.trace(f'Send {command} type: {type(command)}', 0)
+                self.trace(f'Send {command} type: {type(command)}', 5)
                 res = self.client.send(command)
-                self.log.trace(f'Result {res}', 0)
+                self.trace(f'Result {res}', 10)
 
                 self.dataOrderTable = []
                 # self.dataOrderTable = [[j for j in range(num_cols)] for i in range(len(res))]
@@ -549,7 +561,7 @@ class ClientGUI:
                 self.dataOrderTable = [['' for j in range(num_cols)]]
                 # self.dataOrderTable.append(['', '', '', '', ''])
         except Exception as e:
-            self.log.trace(f"Error fill table part order {e} ", 0)
+            self.trace(f"Error fill table part order {e} ", 1)
             quit()
 
     def Main_Window_Order(self):
@@ -562,7 +574,7 @@ class ClientGUI:
         '''
 
         try:
-            self.log.trace(f'Main_Window_Order', 0)
+            self.trace(f'Main_Window_Order', 5)
 
             self.make_order_table(num_cols=7)
             self.headings = ['Id', 'Number', 'Date', 'Buy', 'Sale', 'Sum', 'Author']
@@ -605,7 +617,7 @@ class ClientGUI:
 
             window.close()
         except Exception as e:
-            self.log.trace(f"Error fill Main Window Order {e} ", 0)
+            self.trace(f"Error fill Main Window Order {e} ", 1)
             quit()
 
     def sum(self):
@@ -635,11 +647,11 @@ class ClientGUI:
         '''
 
         try:
-            self.log.trace(f'Windows_Order {Index} {isNew}', 0)
+            self.trace(f'Windows_Order {Index} {isNew}', 5)
             command = self.make_command('get_Items')
-            self.log.trace(f'Send {command} type: {type(command)}', 0)
+            self.trace(f'Send {command} type: {type(command)}', 5)
             res = self.client.send(command)
-            self.log.trace(f'Result {res}', 0)
+            self.trace(f'Result {res}', 10)
             list_item = [i[1] for i in res]
 
             name_Window = 'New'
@@ -712,7 +724,7 @@ class ClientGUI:
                     window.Element('-SUM-').Update(self.sum())
 
                 if event == 'Delete':
-                    self.log.trace(f"Delete row in order table {self.data[values['-TABLE-'][0]]}", 0)
+                    self.trace(f"Delete row in order table {self.data[values['-TABLE-'][0]]}", 3)
                     del self.dataOrderTable[values['-TABLE-'][0]]
                     window.Element('-TABLE-').Update(self.dataOrderTable[:][:])
                     window.Element('-SUM-').Update(self.sum())
@@ -738,25 +750,25 @@ class ClientGUI:
                     param['id'] = id
                     param['new'] = new
                     command = self.make_command('save_order', param)
-                    self.log.trace(f'Send {command} type: {type(command)}', 0)
+                    self.trace(f'Send {command} type: {type(command)}', 5)
                     new_id = self.client.send(command)
-                    self.log.trace(f'Result {new_id}', 0)
+                    self.trace(f'Result {new_id}', 10)
 
                     if new_id != '' and type(new_id) == str:
                         id = new_id
 
                     row = [id, new['number'], new['date'], new['isIn'], new['isOut'], sum, self.user]
                     if isNew:
-                        self.log.trace(f'append {row}', 0)
+                        self.trace(f'append {row}', 3)
                         self.dataOrder.append(row)
                     else:
-                        self.log.trace(f'update {row}', 0)
+                        self.trace(f'update {row}', 3)
                         self.dataOrder[Index] = row
                     break
 
             window.close()
         except Exception as e:
-            self.log.trace(f"Error Windows Order {e} ", 0)
+            self.trace(f"Error Windows Order {e} ", 1)
             quit()
 
     def Windows_Order_Table_Edit(self, Index, list_item):
@@ -768,7 +780,7 @@ class ClientGUI:
         '''
 
         try:
-            self.log.trace(f'Windows_Order_Table_Edit {Index} {list_item}', 0)
+            self.trace(f'Windows_Order_Table_Edit {Index} {list_item}', 5)
             name_Window = 'New'
             id = ''
             item = ''
@@ -804,21 +816,21 @@ class ClientGUI:
                     param = {}
                     param['name'] = values['-ITEM-']
                     command = self.make_command('get_Items_id_by_Name', param)
-                    self.log.trace(f'Send {command} type: {type(command)}', 0)
+                    self.trace(f'Send {command} type: {type(command)}', 5)
                     id = self.client.send(command)
-                    self.log.trace(f'Result {id}', 0)
+                    self.trace(f'Result {id}', 10)
 
                 row = [id, values['-ITEM-'], int(values['-PRICE-']) ,int(values['-QUANTITY-']), int(values['-SUM-'])]
                 if Index != None:
-                    self.log.trace(f'append {row}', 0)
+                    self.trace(f'append {row}', 3)
                     self.dataOrderTable[Index] = row
                 else:
-                    self.log.trace(f'update {row}', 0)
+                    self.trace(f'update {row}', 3)
                     self.dataOrderTable.append(row)
             window.close()
 
         except Exception as e:
-            self.log.trace(f"Error Windows_Order_Table_Edit {e} ", 0)
+            self.trace(f"Error Windows_Order_Table_Edit {e} ", 1)
             quit()
 
 if __name__ == '__main__':
@@ -826,12 +838,12 @@ if __name__ == '__main__':
     while client.user == None:
         event, values = client.Login()
         if event == None or event == 'Cancel''': # close
-            client.log.trace(f'Close application', 0)
+            client.trace(f'Close application', 0)
             quit()
         elif event == 'Submit':
             client.CheckLogin(values['-LOGIN-'], values['-PASSWORD-'])
             if client.user != None:
                 break
             else:
-                client.log.trace(f"Can't find user", 0)
+                client.trace(f"Can't find user", 0)
     client.Main_Window()

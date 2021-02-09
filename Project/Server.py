@@ -20,26 +20,35 @@ class ServerSocket:
         connectionMDB - connection to MongoDB
         '''
 
-        Log.PRIORITET = 0
-        self.log = Log.Logs('server')
-        self.log.rewriteFile()
-        self.log.trace(f'Build server ', 0)
+        self.keeplog = True
+        self.minlevellog = 10
 
         settings = dbconfig.read_db_config('configDB.ini', 'connect_server')
         if settings:
             self.host = settings['host']
             self.port = int(settings['port'])
-
+            if str(settings['keeplog']).lower() == 'false':
+                self.keeplog = False
+            self.minloglevel = int(settings['minloglevel'])
         else:
-            self.log.trace(f"Can't find options to create socket", 0)
+            # self.log.trace(f"Can't find options to create socket", 0)
             quit()
-            # self.host = HOST
-            # self.port = PORT
+
+        if self.keeplog:
+            self.log = Log.Logs('server')
+            self.log.rewriteFile()
+
+        self.trace(f'Build server ', 0)
 
         self.parametres_Db_Connection = {}
         self.parametres_Db_Connection = dbconfig.read_db_config('configDB.ini', 'mongo')
 
         self.connectionMDB = None
+
+    def trace(self, message, levellog):
+        if self.keeplog:
+            if levellog <= self.minloglevel:
+                self.log.trace(message, levellog)
 
     def create(self):
 
@@ -56,16 +65,16 @@ class ServerSocket:
         create connection to MongoDB
         '''
 
-        self.log.trace(f'Try connect to MongoDB server ', 0)
+        self.trace(f'Try connect to MongoDB server ', 0)
         if self.parametres_Db_Connection:
             self.connectionMDB = daMDB.connect(self.parametres_Db_Connection['database'],
                                                self.parametres_Db_Connection['host'],
                                                int(self.parametres_Db_Connection['port']))
         else:
-            self.log.trace(f"Can't find options to connect to MongoDB", 0)
+            self.trace(f"Can't find options to connect to MongoDB", 0)
             quit()
 
-        self.log.trace(f'Result {self.connectionMDB} ', 0)
+        self.trace(f'Result {self.connectionMDB} ', 10)
 
     def fill_test_data(self):
 
@@ -75,17 +84,17 @@ class ServerSocket:
         '''
 
         try:
-            self.log.trace(f"Run 'how_many_records()' ", 0)
+            self.trace(f"Run 'how_many_records()' ", 5)
             count = daMDB.how_many_records()
             res = 'Base not empty'
             if count == 0:
-                self.log.trace(f"Run 'how_many_records()'", 0)
+                self.trace(f"Run 'how_many_records()'", 5)
                 daMDB.fill_test_data()
-                self.log.trace('fill data', 0)
+                self.trace('fill data', 5)
                 res = 'Base was filled'
             return res
         except Exception as e:
-            self.log.trace(f"Error try fill test data {e} ", 0)
+            self.trace(f"Error try fill test data {e} ", 1)
             return e
 
     def CheckLogin(self, param):
@@ -99,14 +108,14 @@ class ServerSocket:
         login = param['login']
         password = param['password']
         try:
-            self.log.trace(f"Run 'authorisation' {login} {password}", 0)
+            self.trace(f"Run 'authorisation' {login} {password}", 4)
             res = daMDB.authorisation(login, password)
-            self.log.trace(f"Result  {res}", 0)
+            self.trace(f"Result  {res}", 10)
             if res == None:
                 res = ''
             return res
         except Exception as e:
-            self.log.trace(f"Error try CheckLogin {e} ", 0)
+            self.trace(f"Error try CheckLogin {e} ", 1)
             return e
 
     def make_item_table(self):
@@ -117,12 +126,12 @@ class ServerSocket:
         '''
 
         try:
-            self.log.trace(f"Run 'make_item_table' ", 0)
+            self.trace(f"Run 'make_item_table' ", 5)
             res = daMDB.get_Items()
             return res
 
         except Exception as e:
-            self.log.trace(f"Error try make_item_table {e} ", 0)
+            self.trace(f"Error try make_item_table {e} ", 1)
             return e
 
     def delete_item(self, param):
@@ -135,12 +144,12 @@ class ServerSocket:
 
         try:
             id = param['id']
-            self.log.trace(f"Run 'delete_item' {id}", 0)
+            self.trace(f"Run 'delete_item' {id}", 5)
             res = daMDB.delete_item(id)
             return res
 
         except Exception as e:
-            self.log.trace(f"Error try delete_item {e} ", 0)
+            self.trace(f"Error try delete_item {e} ", 1)
             return e
 
     def save_item(self, param):
@@ -154,12 +163,12 @@ class ServerSocket:
         try:
             id = param['id']
             new = param['new']
-            self.log.trace(f"Run 'save_item' {id}", 0)
+            self.trace(f"Run 'save_item' {id}", 5)
             res = daMDB.save_Items(id, new)
             return res
 
         except Exception as e:
-            self.log.trace(f"Error try save_item {e} ", 0)
+            self.trace(f"Error try save_item {e} ", 1)
             return e
 
     def make_user_table(self):
@@ -170,12 +179,12 @@ class ServerSocket:
         '''
 
         try:
-            self.log.trace(f"Run 'make_user_table' ", 0)
+            self.trace(f"Run 'make_user_table' ", 5)
             res = daMDB.get_Users()
             return res
 
         except Exception as e:
-            self.log.trace(f"Error try make_user_table {e} ", 0)
+            self.trace(f"Error try make_user_table {e} ", 1)
             return e
 
     def delete_user(self, param):
@@ -188,12 +197,12 @@ class ServerSocket:
 
         try:
             id = param['id']
-            self.log.trace(f"Run 'delete_user' {id}", 0)
+            self.trace(f"Run 'delete_user' {id}", 5)
             res = daMDB.delete_user(id)
             return res
 
         except Exception as e:
-            self.log.trace(f"Error try delete_user {e} ", 0)
+            self.trace(f"Error try delete_user {e} ", 1)
             return e
 
     def save_user(self, param):
@@ -207,12 +216,12 @@ class ServerSocket:
         try:
             id = param['id']
             new = param['new']
-            self.log.trace(f"Run 'save_user' {id}", 0)
+            self.trace(f"Run 'save_user' {id}", 5)
             res = daMDB.save_Users(id, new)
             return res
 
         except Exception as e:
-            self.log.trace(f"Error try save_user {e} ", 0)
+            self.trace(f"Error try save_user {e} ", 1)
             return e
 
     def make_order_table(self):
@@ -223,12 +232,12 @@ class ServerSocket:
         '''
 
         try:
-            self.log.trace(f"Run 'make_order_table' ", 0)
+            self.trace(f"Run 'make_order_table' ", 5)
             res = daMDB.get_Orders()
             return res
 
         except Exception as e:
-            self.log.trace(f"Error try make_order_table {e} ", 0)
+            self.trace(f"Error try make_order_table {e} ", 1)
             return e
 
     def delete_order(self, param):
@@ -241,12 +250,12 @@ class ServerSocket:
 
         try:
             id = param['id']
-            self.log.trace(f"Run 'delete_order' {id}", 0)
+            self.trace(f"Run 'delete_order' {id}", 5)
             res = daMDB.delete_order(id)
             return res
 
         except Exception as e:
-            self.log.trace(f"Error try delete_order {e} ", 0)
+            self.trace(f"Error try delete_order {e} ", 1)
             return e
 
     def save_order(self, param):
@@ -261,12 +270,12 @@ class ServerSocket:
         try:
             id = param['id']
             new = param['new']
-            self.log.trace(f"Run 'save_Orders' {id}", 0)
+            self.trace(f"Run 'save_Orders' {id}", 5)
             res = daMDB.save_Orders(id, new)
             return res
 
         except Exception as e:
-            self.log.trace(f"Error try save_Orders {e} ", 0)
+            self.trace(f"Error try save_Orders {e} ", 1)
             return e
 
     def make_order_table_table(self, param):
@@ -278,12 +287,12 @@ class ServerSocket:
 
         try:
             id = param['id']
-            self.log.trace(f"Run 'make_order_table_table' ", 0)
+            self.trace(f"Run 'make_order_table_table' ", 5)
             res = daMDB.get_Order_table(id)
             return res
 
         except Exception as e:
-            self.log.trace(f"Error try make_order_table_table {e} ", 0)
+            self.trace(f"Error try make_order_table_table {e} ", 1)
             return e
 
     def get_Items(self):
@@ -294,12 +303,12 @@ class ServerSocket:
         '''
 
         try:
-            self.log.trace(f"Run 'get_Items' {id}", 0)
+            self.trace(f"Run 'get_Items' {id}", 5)
             res = daMDB.get_Items()
             return res
 
         except Exception as e:
-            self.log.trace(f"Error try get_Items_Name {e} ", 0)
+            self.trace(f"Error try get_Items_Name {e} ", 1)
             return e
 
     def get_Items_id_by_Name(self, param):
@@ -312,12 +321,12 @@ class ServerSocket:
 
         try:
             name = param['name']
-            self.log.trace(f"Run 'get_Items_id_by_Name' {id}", 0)
+            self.trace(f"Run 'get_Items_id_by_Name' {id}", 5)
             res = daMDB.get_Items_id_by_Name(name)
             return res
 
         except Exception as e:
-            self.log.trace(f"Error try get_Items_Name {e} ", 0)
+            self.trace(f"Error try get_Items_Name {e} ", 1)
             return e
 
     def action(self, data):
@@ -332,11 +341,11 @@ class ServerSocket:
         user = dict['user']
         command = dict['command']
         param = dict['param']
-        self.log.trace(f"User {user} command {command}", 0)
-        self.log.trace(f"Connection to MongoDB {self.connectionMDB}", 0)
+        self.trace(f"User {user} command {command}", 8)
+        self.trace(f"Connection to MongoDB {self.connectionMDB}", 8)
         if self.connectionMDB == None:
             self.make_connectionMDB()
-            self.log.trace(f"Try connection to MongoDB {self.connectionMDB}", 0)
+            self.trace(f"Try connection to MongoDB {self.connectionMDB}", 8)
 
         if command == 'Fill test data':
             return self.fill_test_data()
@@ -379,11 +388,11 @@ class ServerSocket:
         '''
 
         self.create()
-        self.log.trace('Server create ', 0)
+        self.trace('Server create ', 0)
 
         if_continue = True
         if_continue_listen = True
-        self.log.trace(f"Server {self.host} listen port {self.port}", 0)
+        self.trace(f"Server {self.host} listen port {self.port}", 0)
 
         while if_continue_listen:
             self.srv.listen(1)
@@ -398,32 +407,32 @@ class ServerSocket:
                     message = sock.recv(1024)
                     if not message:
                         break
-                    self.log.trace(f"Received from {addr} {message} {sock} ", 0)
+                    self.trace(f"Received from {addr} {message} {sock} ", 3)
                     answer = self.action(message)
                 except Exception as e:
                     if type(last_recv_error) != type(e):
-                        self.log.trace(f"Input server exception {e} try recv", 0)
+                        self.trace(f"Input server exception {e} try recv", 1)
                     last_recv_error = e
                     break
 
                 else:
                     if answer != None:
                         try:
-                            self.log.trace(f"answer {answer}, {type(answer)}")
+                            self.trace(f"answer {answer}, {type(answer)}", 3)
                             s = json.dumps(answer).encode('utf-8')
-                            self.log.trace(f"send {s}, {type(s)}, {sock}")
+                            self.trace(f"send {s}, {type(s)}, {sock}", 3)
                             sock.send(s)
-                            self.log.trace(f"success")
+                            self.trace(f"success", 10)
                             answer = None
 
                         except Exception as e:
                             if type(last_send_error) != type(e):
-                                self.log.trace(f"Out server exception {e} try send", 0)
+                                self.trace(f"Out server exception {e} try send", 1)
                             last_send_error = e
                             break
 
         sock.close()
-        self.log.trace('server stopped ', 0)
+        self.trace('server stopped ', 0)
 
 if __name__ == '__main__':
     serv = ServerSocket()
